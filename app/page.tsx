@@ -526,7 +526,14 @@ export default function Home() {
       <footer className="px-5 py-8 sm:px-8 lg:px-10">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 text-sm font-black uppercase tracking-[0.18em] sm:flex-row sm:items-center sm:justify-between">
           <p>TaskU @ UConn</p>
-          <p className="text-husky">Instagram: @theTaskU</p>
+          <a
+            href="https://instagram.com/thetasku"
+            target="_blank"
+            rel="noreferrer"
+            className="text-husky no-underline hover:underline"
+          >
+            Instagram: @theTaskU
+          </a>
         </div>
       </footer>
     </main>
