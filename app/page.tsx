@@ -21,15 +21,16 @@ const taskCategories = ["Move", "Tutor", "Pickup", "Clean", "Errand", "Fix", "Ot
 const taskPlaceholders = ["Move a mini fridge", "Take trash out", "Help move boxes", "Pick up groceries"];
 const paymentStorageKey = "tasku-posting-fee-paid";
 const formStorageKey = "tasku-task-form-draft";
+const initialForm: TaskForm = {
+  task: "",
+  budget: "",
+  location: "",
+  time: "ASAP",
+  contact: "",
+};
 
 export default function Home() {
-  const [form, setForm] = useState<TaskForm>({
-    task: "",
-    budget: "",
-    location: "",
-    time: "ASAP",
-    contact: "",
-  });
+  const [form, setForm] = useState<TaskForm>(initialForm);
   const [selectedCategory, setSelectedCategory] = useState("Move");
   const [posted, setPosted] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -105,6 +106,16 @@ export default function Home() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function resetTaskFlow() {
+    window.localStorage.removeItem(formStorageKey);
+    window.localStorage.removeItem(paymentStorageKey);
+    setForm(initialForm);
+    setSelectedCategory("Move");
+    setPaymentStatus("idle");
+    setPaymentMessage("");
+    setIsSubmitting(false);
+  }
+
   async function handlePayment() {
     setPaymentStatus("loading");
     setPaymentMessage("");
@@ -167,6 +178,7 @@ export default function Home() {
       }
 
       console.log("TaskU post", { ...form, category: selectedCategory, paid: "Yes" });
+      resetTaskFlow();
       setPosted(true);
     } catch (error) {
       setPaymentMessage(error instanceof Error ? error.message : "Could not submit task. Please try again.");
@@ -263,6 +275,16 @@ export default function Home() {
               <p className="mt-3 text-sm font-bold uppercase tracking-[0.16em] text-white/55">
                 Check your phone or email soon
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  resetTaskFlow();
+                  setPosted(false);
+                }}
+                className="mt-8 h-14 rounded-md bg-white px-6 text-sm font-black uppercase tracking-[0.14em] text-uconn transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-husky hover:text-white"
+              >
+                Post another task
+              </button>
             </div>
           ) : (
           <form onSubmit={handleSubmit} className="grid gap-3">
