@@ -20,6 +20,7 @@ const trustItems = [
 const taskCategories = ["Move", "Tutor", "Pickup", "Clean", "Errand", "Fix", "Other"];
 const taskPlaceholders = ["Move a mini fridge", "Take trash out", "Help move boxes", "Pick up groceries"];
 const paymentStorageKey = "tasku-posting-fee-paid";
+const formStorageKey = "tasku-task-form-draft";
 
 export default function Home() {
   const [form, setForm] = useState<TaskForm>({
@@ -43,6 +44,28 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
     const storedPaymentComplete = window.localStorage.getItem(paymentStorageKey) === "true";
+    const storedForm = window.localStorage.getItem(formStorageKey);
+
+    if ((payment === "success" || storedPaymentComplete) && storedForm) {
+      try {
+        const restored = JSON.parse(storedForm) as Partial<TaskForm> & { selectedCategory?: string };
+        setForm((current) => ({
+          task: restored.task ?? current.task,
+          budget: restored.budget ?? current.budget,
+          location: restored.location ?? current.location,
+          time: restored.time === "ASAP" || restored.time === "Today" || restored.time === "This Week"
+            ? restored.time
+            : current.time,
+          contact: restored.contact ?? current.contact,
+        }));
+
+        if (restored.selectedCategory) {
+          setSelectedCategory(restored.selectedCategory);
+        }
+      } catch (error) {
+        console.error("Could not restore TaskU form draft", error);
+      }
+    }
 
     if (storedPaymentComplete) {
       setPaymentStatus("success");
@@ -85,6 +108,13 @@ export default function Home() {
   async function handlePayment() {
     setPaymentStatus("loading");
     setPaymentMessage("");
+    window.localStorage.setItem(
+      formStorageKey,
+      JSON.stringify({
+        ...form,
+        selectedCategory,
+      }),
+    );
 
     try {
       const response = await fetch("/api/create-checkout-session", {
