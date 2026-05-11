@@ -34,6 +34,7 @@ export default function Home() {
   const [paymentMessage, setPaymentMessage] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [placeholderFading, setPlaceholderFading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const paymentComplete = paymentStatus === "success";
 
@@ -92,7 +93,7 @@ export default function Home() {
     }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!paymentComplete) {
       setPaymentStatus("error");
@@ -100,8 +101,40 @@ export default function Home() {
       return;
     }
 
-    console.log("TaskU post", { ...form, category: selectedCategory });
-    setPosted(true);
+    setIsSubmitting(true);
+    setPaymentMessage("");
+
+    try {
+      const response = await fetch("/api/submit-task", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "",
+          taskDescription: form.task,
+          location: form.location,
+          timeNeeded: form.time,
+          contact: form.contact,
+          price: form.budget,
+          paid: paymentComplete ? "Yes" : "No",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Could not submit task. Please try again.");
+      }
+
+      console.log("TaskU post", { ...form, category: selectedCategory, paid: "Yes" });
+      setPosted(true);
+    } catch (error) {
+      setPaymentStatus("error");
+      setPaymentMessage(error instanceof Error ? error.message : "Could not submit task. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -289,14 +322,14 @@ export default function Home() {
             </div>
 
             <button
-              disabled={!paymentComplete}
+              disabled={!paymentComplete || isSubmitting}
               className={`mt-2 h-16 rounded-md text-lg font-black uppercase tracking-[0.16em] text-white transition duration-200 focus:outline-none focus:ring-4 focus:ring-white/25 ${
                 paymentComplete
                   ? "bg-uconn shadow-speed hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-110"
                   : "cursor-not-allowed bg-husky opacity-50"
               }`}
             >
-              Submit Task
+              {isSubmitting ? "Submitting Task" : "Submit Task"}
             </button>
             {!paymentComplete ? (
               <p className="-mt-1 text-center text-xs font-black uppercase tracking-[0.16em] text-white/62">
