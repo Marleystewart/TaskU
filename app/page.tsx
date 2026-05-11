@@ -5,7 +5,6 @@ import { ArrowDown, Bolt, Check, CircleDollarSign, MapPin, Users } from "lucide-
 
 type TaskForm = {
   name: string;
-  task: string;
   budget: string;
   location: string;
   time: "ASAP" | "Today" | "This Week";
@@ -24,7 +23,6 @@ const paymentStorageKey = "tasku-posting-fee-paid";
 const formStorageKey = "tasku-task-form-draft";
 const initialForm: TaskForm = {
   name: "",
-  task: "",
   budget: "",
   location: "",
   time: "ASAP",
@@ -33,6 +31,7 @@ const initialForm: TaskForm = {
 
 export default function Home() {
   const [form, setForm] = useState<TaskForm>(initialForm);
+  const [taskDescription, setTaskDescription] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Move");
   const [posted, setPosted] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -52,6 +51,7 @@ export default function Home() {
       window.localStorage.removeItem(formStorageKey);
       window.localStorage.removeItem(paymentStorageKey);
       setForm(initialForm);
+      setTaskDescription("");
       setSelectedCategory("Move");
       setPaymentStatus("idle");
       setPaymentMessage(payment === "cancel" ? "Payment canceled. Your task was not submitted." : "");
@@ -65,10 +65,12 @@ export default function Home() {
 
     if (storedForm) {
       try {
-        const restored = JSON.parse(storedForm) as Partial<TaskForm> & { selectedCategory?: string };
+        const restored = JSON.parse(storedForm) as Partial<TaskForm> & {
+          selectedCategory?: string;
+          taskDescription?: string;
+        };
         setForm((current) => ({
           name: restored.name ?? current.name,
-          task: restored.task ?? current.task,
           budget: restored.budget ?? current.budget,
           location: restored.location ?? current.location,
           time: restored.time === "ASAP" || restored.time === "Today" || restored.time === "This Week"
@@ -76,6 +78,7 @@ export default function Home() {
             : current.time,
           contact: restored.contact ?? current.contact,
         }));
+        setTaskDescription(restored.taskDescription ?? "");
 
         if (restored.selectedCategory) {
           setSelectedCategory(restored.selectedCategory);
@@ -112,6 +115,7 @@ export default function Home() {
     window.localStorage.removeItem(formStorageKey);
     window.localStorage.removeItem(paymentStorageKey);
     setForm(initialForm);
+    setTaskDescription("");
     setSelectedCategory("Move");
     setPaymentStatus("idle");
     setPaymentMessage("");
@@ -125,6 +129,7 @@ export default function Home() {
       formStorageKey,
       JSON.stringify({
         ...form,
+        taskDescription,
         selectedCategory,
       }),
     );
@@ -156,6 +161,7 @@ export default function Home() {
 
     setIsSubmitting(true);
     setPaymentMessage("");
+    console.log("Task Description:", taskDescription);
 
     try {
       const response = await fetch("/api/submit-task", {
@@ -165,7 +171,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           Name: form.name,
-          "Task Description": form.task,
+          taskDescription,
           Location: form.location,
           "Time Needed": form.time,
           Contact: form.contact,
@@ -180,7 +186,7 @@ export default function Home() {
         throw new Error(data.error ?? "Could not submit task. Please try again.");
       }
 
-      console.log("TaskU post", { ...form, category: selectedCategory, paid: "Yes" });
+      console.log("TaskU post", { ...form, taskDescription, category: selectedCategory, paid: "Yes" });
       resetTaskFlow();
       setPosted(true);
     } catch (error) {
@@ -310,8 +316,8 @@ export default function Home() {
               </span>
               <input
                 required
-                value={form.task}
-                onChange={(event) => updateField("task", event.target.value)}
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
                 placeholder={taskPlaceholders[placeholderIndex]}
                 className={`h-16 rounded-md border-2 border-white bg-white px-5 text-lg font-extrabold text-uconn outline-none transition placeholder:transition-colors placeholder:duration-300 focus:border-husky ${
                   placeholderFading ? "placeholder:text-uconn/10" : "placeholder:text-uconn/35"
