@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
 
 type TaskSubmission = {
+  name?: string;
   taskDescription?: string;
   location?: string;
   timeNeeded?: string;
   contact?: string;
   price?: string;
   paid?: string;
+  Name?: string;
   "Task Description"?: string;
   Location?: string;
   "Time Needed"?: string;
   Contact?: string;
   Price?: string;
   Paid?: string;
+  "Paid (Yes or No)"?: string;
 };
 
 export const runtime = "nodejs";
@@ -30,13 +33,16 @@ export async function POST(request: Request) {
   try {
     const submission = (await request.json()) as TaskSubmission;
     const payload = {
+      Name: submission.Name ?? submission.name ?? "",
       "Task Description": submission["Task Description"] ?? submission.taskDescription ?? "",
       Location: submission.Location ?? submission.location ?? "",
       "Time Needed": submission["Time Needed"] ?? submission.timeNeeded ?? "",
       Contact: submission.Contact ?? submission.contact ?? "",
       Price: submission.Price ?? submission.price ?? "",
-      Paid: submission.Paid ?? submission.paid ?? "No",
+      "Paid (Yes or No)": submission["Paid (Yes or No)"] ?? submission.Paid ?? submission.paid ?? "No",
     };
+
+    console.log("Sending task submission to Sheet.best", { payload });
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",

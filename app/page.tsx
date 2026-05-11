@@ -161,12 +161,13 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          Name: "",
           "Task Description": form.task,
           Location: form.location,
           "Time Needed": form.time,
           Contact: form.contact,
           Price: form.budget,
-          Paid: "Yes",
+          "Paid (Yes or No)": "Yes",
         }),
       });
 
