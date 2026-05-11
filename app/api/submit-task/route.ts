@@ -32,14 +32,21 @@ export async function POST(request: Request) {
 
   try {
     const submission = (await request.json()) as TaskSubmission;
+    const name = submission.Name ?? submission.name ?? "";
+    const taskDescription = submission["Task Description"] ?? submission.taskDescription ?? "";
+    const location = submission.Location ?? submission.location ?? "";
+    const timeNeeded = submission["Time Needed"] ?? submission.timeNeeded ?? "";
+    const contact = submission.Contact ?? submission.contact ?? "";
+    const price = submission.Price ?? submission.price ?? "";
+
     const payload = {
-      Name: submission.Name ?? submission.name ?? "",
-      "Task Description": submission["Task Description"] ?? submission.taskDescription ?? "",
-      Location: submission.Location ?? submission.location ?? "",
-      "Time Needed": submission["Time Needed"] ?? submission.timeNeeded ?? "",
-      Contact: submission.Contact ?? submission.contact ?? "",
-      Price: submission.Price ?? submission.price ?? "",
-      "Paid (Yes or No)": submission["Paid (Yes or No)"] ?? submission.Paid ?? submission.paid ?? "No",
+      "Name": name,
+      "Task Description": taskDescription,
+      "Location": location,
+      "Time Needed": timeNeeded,
+      "Contact": contact,
+      "Price": price,
+      "Paid (Yes or No)": "Yes",
     };
 
     console.log("Sending task submission to Sheet.best", { payload });

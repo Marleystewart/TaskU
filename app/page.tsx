@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { ArrowDown, Bolt, Check, CircleDollarSign, MapPin, Users } from "lucide-react";
 
 type TaskForm = {
+  name: string;
   task: string;
   budget: string;
   location: string;
@@ -22,6 +23,7 @@ const taskPlaceholders = ["Move a mini fridge", "Take trash out", "Help move box
 const paymentStorageKey = "tasku-posting-fee-paid";
 const formStorageKey = "tasku-task-form-draft";
 const initialForm: TaskForm = {
+  name: "",
   task: "",
   budget: "",
   location: "",
@@ -65,6 +67,7 @@ export default function Home() {
       try {
         const restored = JSON.parse(storedForm) as Partial<TaskForm> & { selectedCategory?: string };
         setForm((current) => ({
+          name: restored.name ?? current.name,
           task: restored.task ?? current.task,
           budget: restored.budget ?? current.budget,
           location: restored.location ?? current.location,
@@ -161,7 +164,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          Name: "",
+          Name: form.name,
           "Task Description": form.task,
           Location: form.location,
           "Time Needed": form.time,
@@ -288,6 +291,19 @@ export default function Home() {
             </div>
           ) : (
           <form onSubmit={handleSubmit} className="grid gap-3">
+            <label className="grid gap-2">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">
+                Your Name
+              </span>
+              <input
+                required
+                value={form.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                placeholder="Your name"
+                className="h-16 rounded-md border-2 border-white bg-white px-5 text-lg font-extrabold text-uconn outline-none transition placeholder:text-uconn/35 focus:border-husky"
+              />
+            </label>
+
             <label className="grid gap-2">
               <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">
                 What do you need help with?
