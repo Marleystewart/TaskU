@@ -9,6 +9,7 @@ type TaskForm = {
   location: string;
   time: "ASAP" | "Today" | "This Week";
   contact: string;
+  paymentMethod: "Venmo" | "Cash" | "CashApp" | "Other";
 };
 
 const trustItems = [
@@ -17,6 +18,7 @@ const trustItems = [
   { label: "Affordable help", icon: CircleDollarSign },
 ];
 
+const workerPaymentMethods = ["Venmo", "Cash", "CashApp", "Other"] as const;
 const taskCategories = ["Move", "Tutor", "Pickup", "Clean", "Errand", "Fix", "Other"];
 const taskPlaceholders = ["Move a mini fridge", "Take trash out", "Help move boxes", "Pick up groceries"];
 const paymentStorageKey = "tasku-posting-fee-paid";
@@ -27,6 +29,7 @@ const initialForm: TaskForm = {
   location: "",
   time: "ASAP",
   contact: "",
+  paymentMethod: "Venmo",
 };
 
 export default function Home() {
@@ -77,6 +80,9 @@ export default function Home() {
             ? restored.time
             : current.time,
           contact: restored.contact ?? current.contact,
+          paymentMethod: workerPaymentMethods.includes(restored.paymentMethod as TaskForm["paymentMethod"])
+            ? (restored.paymentMethod as TaskForm["paymentMethod"])
+            : current.paymentMethod,
         }));
         setTaskDescription(restored.taskDescription ?? "");
 
@@ -167,6 +173,7 @@ export default function Home() {
     const timeNeeded = form.time;
     const contact = form.contact;
     const price = form.budget;
+    const paymentMethod = form.paymentMethod;
     const submitBody = {
       name,
       taskDescription,
@@ -174,6 +181,7 @@ export default function Home() {
       timeNeeded,
       contact,
       price,
+      paymentMethod,
     };
     console.log("SUBMIT BODY:", submitBody);
 
@@ -386,6 +394,29 @@ export default function Home() {
                   className="h-16 rounded-md border-2 border-white bg-white px-5 text-lg font-extrabold text-uconn outline-none transition placeholder:text-uconn/35 focus:border-husky"
                 />
               </label>
+            </div>
+
+            <div className="grid gap-2">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">
+                How will you pay the worker?
+              </span>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {workerPaymentMethods.map((method) => (
+                  <button
+                    type="button"
+                    key={method}
+                    onClick={() => updateField("paymentMethod", method)}
+                    className={`flex h-12 items-center justify-center gap-1.5 rounded-md border-2 text-xs font-black uppercase transition duration-200 hover:scale-[1.02] sm:text-sm ${
+                      form.paymentMethod === method
+                        ? "border-husky bg-white text-uconn"
+                        : "border-white/35 bg-white/8 text-white hover:border-white hover:bg-white/15"
+                    }`}
+                  >
+                    {form.paymentMethod === method ? <Check size={14} strokeWidth={4} /> : null}
+                    {method}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="mt-2 rounded-md border-2 border-white/25 bg-white/8 p-5">

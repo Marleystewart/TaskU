@@ -7,6 +7,7 @@ type TaskSubmission = {
   timeNeeded?: string;
   contact?: string;
   price?: string;
+  paymentMethod?: string;
   paid?: string;
   Name?: string;
   "Task Description"?: string;
@@ -14,6 +15,7 @@ type TaskSubmission = {
   "Time Needed"?: string;
   Contact?: string;
   Price?: string;
+  "Payment Method"?: string;
   Paid?: string;
   "Paid (Yes or No)"?: string;
 };
@@ -39,6 +41,7 @@ export async function POST(request: Request) {
     const timeNeeded = submission["Time Needed"] ?? submission.timeNeeded ?? "";
     const contact = submission.Contact ?? submission.contact ?? "";
     const price = submission.Price ?? submission.price ?? "";
+    const paymentMethod = submission["Payment Method"] ?? submission.paymentMethod ?? "";
 
     console.log("Received taskDescription from request body", {
       taskDescription: submission.taskDescription,
@@ -61,6 +64,7 @@ export async function POST(request: Request) {
       "Time Needed": timeNeeded || "",
       "Contact": contact || "",
       "Price": price || "",
+      "Payment Method": paymentMethod || "",
       "Paid (Yes or No)": "Yes",
     };
 
