@@ -40,29 +40,11 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
-    const sessionId = params.get("session_id");
 
-    if (payment === "success" && sessionId) {
-      setPaymentStatus("loading");
-      setPaymentMessage("Confirming payment...");
-
-      fetch(`/api/verify-checkout-session?session_id=${encodeURIComponent(sessionId)}`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.paid) {
-            setPaymentStatus("success");
-            setPaymentMessage("Payment complete — you can now submit your task.");
-            window.history.replaceState(null, "", "/#task-form");
-            return;
-          }
-
-          setPaymentStatus("error");
-          setPaymentMessage("Payment was not completed. Please try again.");
-        })
-        .catch(() => {
-          setPaymentStatus("error");
-          setPaymentMessage("Payment could not be confirmed. Please try again.");
-        });
+    if (payment === "success") {
+      setPaymentStatus("success");
+      setPaymentMessage("Payment complete — you can now submit your task.");
+      window.history.replaceState(null, "", "/#task-form");
     }
 
     if (payment === "cancel") {
@@ -100,13 +82,13 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok || !data.url) {
-        throw new Error("Payment is unavailable right now. Please try again soon.");
+        throw new Error(data.error ?? "Payment setup is not complete yet.");
       }
 
       window.location.href = data.url;
     } catch (error) {
       setPaymentStatus("error");
-      setPaymentMessage(error instanceof Error ? error.message : "Payment is unavailable right now. Please try again soon.");
+      setPaymentMessage(error instanceof Error ? error.message : "Payment setup is not complete yet.");
     }
   }
 
