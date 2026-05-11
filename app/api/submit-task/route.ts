@@ -4,13 +4,18 @@ const fallbackSheetId = "1kMOnd3HZz3WOLbiCDAsfe27E6z6bNtEP9iOu7FqYJos";
 const fallbackSheetBestUrl = `https://api.sheetbest.com/sheets/${fallbackSheetId}`;
 
 type TaskSubmission = {
-  name?: string;
   taskDescription?: string;
   location?: string;
   timeNeeded?: string;
   contact?: string;
   price?: string;
   paid?: string;
+  "Task Description"?: string;
+  Location?: string;
+  "Time Needed"?: string;
+  Contact?: string;
+  Price?: string;
+  Paid?: string;
 };
 
 export const runtime = "nodejs";
@@ -21,13 +26,12 @@ export async function POST(request: Request) {
   try {
     const submission = (await request.json()) as TaskSubmission;
     const payload = {
-      Name: submission.name ?? "",
-      "Task Description": submission.taskDescription ?? "",
-      Location: submission.location ?? "",
-      "Time Needed": submission.timeNeeded ?? "",
-      Contact: submission.contact ?? "",
-      Price: submission.price ?? "",
-      Paid: submission.paid ?? "No",
+      "Task Description": submission["Task Description"] ?? submission.taskDescription ?? "",
+      Location: submission.Location ?? submission.location ?? "",
+      "Time Needed": submission["Time Needed"] ?? submission.timeNeeded ?? "",
+      Contact: submission.Contact ?? submission.contact ?? "",
+      Price: submission.Price ?? submission.price ?? "",
+      Paid: submission.Paid ?? submission.paid ?? "No",
     };
 
     const response = await fetch(sheetBestUrl, {

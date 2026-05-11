@@ -19,6 +19,7 @@ const trustItems = [
 
 const taskCategories = ["Move", "Tutor", "Pickup", "Clean", "Errand", "Fix", "Other"];
 const taskPlaceholders = ["Move a mini fridge", "Take trash out", "Help move boxes", "Pick up groceries"];
+const paymentStorageKey = "tasku-posting-fee-paid";
 
 export default function Home() {
   const [form, setForm] = useState<TaskForm>({
@@ -41,16 +42,25 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
+    const storedPaymentComplete = window.localStorage.getItem(paymentStorageKey) === "true";
+
+    if (storedPaymentComplete) {
+      setPaymentStatus("success");
+      setPaymentMessage("Payment complete — you can now submit your task.");
+    }
 
     if (payment === "success") {
+      window.localStorage.setItem(paymentStorageKey, "true");
       setPaymentStatus("success");
       setPaymentMessage("Payment complete — you can now submit your task.");
       window.history.replaceState(null, "", "/#task-form");
     }
 
     if (payment === "cancel") {
-      setPaymentStatus("idle");
-      setPaymentMessage("Payment canceled. Your task was not submitted.");
+      if (!storedPaymentComplete) {
+        setPaymentStatus("idle");
+        setPaymentMessage("Payment canceled. Your task was not submitted.");
+      }
       window.history.replaceState(null, "", "/#task-form");
     }
   }, []);
@@ -111,13 +121,12 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: "",
-          taskDescription: form.task,
-          location: form.location,
-          timeNeeded: form.time,
-          contact: form.contact,
-          price: form.budget,
-          paid: paymentComplete ? "Yes" : "No",
+          "Task Description": form.task,
+          Location: form.location,
+          "Time Needed": form.time,
+          Contact: form.contact,
+          Price: form.budget,
+          Paid: "Yes",
         }),
       });
 
@@ -130,7 +139,6 @@ export default function Home() {
       console.log("TaskU post", { ...form, category: selectedCategory, paid: "Yes" });
       setPosted(true);
     } catch (error) {
-      setPaymentStatus("error");
       setPaymentMessage(error instanceof Error ? error.message : "Could not submit task. Please try again.");
     } finally {
       setIsSubmitting(false);
