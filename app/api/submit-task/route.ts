@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
 
-const fallbackSheetId = "1kMOnd3HZz3WOLbiCDAsfe27E6z6bNtEP9iOu7FqYJos";
-const fallbackSheetBestUrl = `https://api.sheetbest.com/sheets/${fallbackSheetId}`;
-
 type TaskSubmission = {
   taskDescription?: string;
   location?: string;
@@ -21,7 +18,14 @@ type TaskSubmission = {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const sheetBestUrl = process.env.SHEET_BEST_API_URL ?? fallbackSheetBestUrl;
+  const sheetBestUrl = process.env.SHEET_BEST_API_URL;
+  const sheetBestApiKey = process.env.SHEET_BEST_API_KEY;
+
+  if (!sheetBestUrl) {
+    const message = "Sheet.best endpoint is not configured. Set SHEET_BEST_API_URL to your Sheet.best API URL.";
+    console.error("Sheet.best endpoint missing", { hasSheetBestUrl: false });
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   try {
     const submission = (await request.json()) as TaskSubmission;
@@ -34,32 +38,50 @@ export async function POST(request: Request) {
       Paid: submission.Paid ?? submission.paid ?? "No",
     };
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (sheetBestApiKey) {
+      headers["X-Api-Key"] = sheetBestApiKey;
+    }
+
     const response = await fetch(sheetBestUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const responseText = await response.text();
+      const upstreamMessage = responseText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      const message = `Sheet.best error (${response.status}): ${upstreamMessage || response.statusText}`;
+
       console.error("Sheet.best task submission failed", {
+        url: sheetBestUrl,
         status: response.status,
+        statusText: response.statusText,
+        payload,
         response: responseText,
       });
 
       return NextResponse.json(
-        { error: "Could not submit task. Please try again." },
+        { error: message },
         { status: 500 },
       );
     }
+
+    const responseText = await response.text();
+    console.log("Sheet.best task submission accepted", {
+      status: response.status,
+      response: responseText,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Task submission failed", error);
     return NextResponse.json(
-      { error: "Could not submit task. Please try again." },
+      { error: error instanceof Error ? error.message : "Could not submit task. Please try again." },
       { status: 500 },
     );
   }
