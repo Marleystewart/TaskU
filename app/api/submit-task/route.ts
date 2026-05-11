@@ -22,7 +22,6 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const sheetBestUrl = process.env.SHEET_BEST_API_URL;
-  const sheetBestApiKey = process.env.SHEET_BEST_API_KEY;
 
   if (!sheetBestUrl) {
     const message = "Sheet.best endpoint is not configured. Set SHEET_BEST_API_URL to your Sheet.best API URL.";
@@ -43,29 +42,33 @@ export async function POST(request: Request) {
       taskDescription: submission.taskDescription,
     });
 
+    if (!taskDescription.trim()) {
+      console.error("Task Description is empty before Sheet.best submit", {
+        submission,
+      });
+      return NextResponse.json(
+        { error: "Task Description is required before submitting." },
+        { status: 400 },
+      );
+    }
+
     const payload = {
-      "Name": name,
-      "Task Description": taskDescription,
-      "Location": location,
-      "Time Needed": timeNeeded,
-      "Contact": contact,
-      "Price": price,
+      "Name": name || "",
+      "Task Description": taskDescription || "",
+      "Location": location || "",
+      "Time Needed": timeNeeded || "",
+      "Contact": contact || "",
+      "Price": price || "",
       "Paid (Yes or No)": "Yes",
     };
 
-    console.log("Sending task submission to Sheet.best", { payload });
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-
-    if (sheetBestApiKey) {
-      headers["X-Api-Key"] = sheetBestApiKey;
-    }
+    console.log("SENDING TO SHEET:", payload);
 
     const response = await fetch(sheetBestUrl, {
       method: "POST",
-      headers,
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(payload),
     });
 
