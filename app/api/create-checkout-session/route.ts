@@ -1,47 +1,59 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
-const stripeApiBase = "https://api.stripe.com/v1";
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-  if (!stripeSecretKey || !stripePublishableKey || !siteUrl) {
+  if (!stripeSecretKey || !siteUrl) {
+    console.error("Stripe Checkout setup missing", {
+      hasSecretKey: Boolean(stripeSecretKey),
+      hasSiteUrl: Boolean(siteUrl),
+    });
+
     return NextResponse.json(
       { error: "Payment setup is not complete yet." },
       { status: 500 },
     );
   }
 
-  const body = new URLSearchParams({
-    mode: "payment",
-    "automatic_payment_methods[enabled]": "true",
-    "line_items[0][quantity]": "1",
-    "line_items[0][price_data][currency]": "usd",
-    "line_items[0][price_data][unit_amount]": "300",
-    "line_items[0][price_data][product_data][name]": "TaskU Posting Fee",
-    success_url: `${siteUrl}?payment=success`,
-    cancel_url: `${siteUrl}?payment=cancel`,
-  });
+  try {
+    const stripe = new Stripe(stripeSecretKey);
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: 300,
+            product_data: {
+              name: "TaskU Posting Fee",
+            },
+          },
+        },
+      ],
+      success_url: `${siteUrl}?payment=success`,
+      cancel_url: `${siteUrl}?payment=cancel`,
+    });
 
-  const response = await fetch(`${stripeApiBase}/checkout/sessions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${stripeSecretKey}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
+    if (!session.url) {
+      console.error("Stripe Checkout session missing URL", { sessionId: session.id });
+      return NextResponse.json(
+        { error: "Payment setup is not complete yet." },
+        { status: 500 },
+      );
+    }
 
-  const data = await response.json();
-
-  if (!response.ok) {
+    return NextResponse.json({ url: session.url });
+  } catch (error) {
+    console.error("Stripe Checkout session creation failed", error);
     return NextResponse.json(
       { error: "Payment setup is not complete yet." },
-      { status: response.status },
+      { status: 500 },
     );
   }
-
-  return NextResponse.json({ url: data.url });
 }
