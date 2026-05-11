@@ -31,6 +31,8 @@ export async function POST(request: Request) {
 
   try {
     const submission = (await request.json()) as TaskSubmission;
+    console.log("REQ BODY:", submission);
+
     const name = submission.Name ?? submission.name ?? "";
     const taskDescription = submission.taskDescription ?? submission["Task Description"] ?? "";
     const location = submission.Location ?? submission.location ?? "";

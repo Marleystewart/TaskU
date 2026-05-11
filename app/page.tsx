@@ -162,6 +162,20 @@ export default function Home() {
     setIsSubmitting(true);
     setPaymentMessage("");
     console.log("Task Description:", taskDescription);
+    const name = form.name;
+    const location = form.location;
+    const timeNeeded = form.time;
+    const contact = form.contact;
+    const price = form.budget;
+    const submitBody = {
+      name,
+      taskDescription,
+      location,
+      timeNeeded,
+      contact,
+      price,
+    };
+    console.log("SUBMIT BODY:", submitBody);
 
     try {
       const response = await fetch("/api/submit-task", {
@@ -169,15 +183,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          Name: form.name,
-          taskDescription,
-          Location: form.location,
-          "Time Needed": form.time,
-          Contact: form.contact,
-          Price: form.budget,
-          "Paid (Yes or No)": "Yes",
-        }),
+        body: JSON.stringify(submitBody),
       });
 
       const data = await response.json();
