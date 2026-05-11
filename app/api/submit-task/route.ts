@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
     const payload = {
       "Name": name || "",
-      "Task Description": taskDescription || "",
+      "TaskDescription": taskDescription || "",
       "Location": location || "",
       "Time Needed": timeNeeded || "",
       "Contact": contact || "",
