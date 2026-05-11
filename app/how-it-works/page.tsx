@@ -48,7 +48,7 @@ export default function HowItWorksPage() {
                 Just describe what you need, pay a small posting fee, and your task is shared so someone can help you quickly.
               </p>
               <p>
-                Whether it&apos;s moving something, running an errand, or getting quick help — TaskU makes it easy.
+                Whether it&apos;s moving something, running an errand, or getting quick help, TaskU makes it easy.
               </p>
               <p>
                 The person who completes your task keeps 100% of the payment, and you work out the job details and payment directly with them.
