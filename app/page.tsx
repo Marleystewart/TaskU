@@ -44,10 +44,24 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
-    const storedPaymentComplete = window.localStorage.getItem(paymentStorageKey) === "true";
     const storedForm = window.localStorage.getItem(formStorageKey);
 
-    if ((payment === "success" || storedPaymentComplete) && storedForm) {
+    if (payment !== "success") {
+      window.localStorage.removeItem(formStorageKey);
+      window.localStorage.removeItem(paymentStorageKey);
+      setForm(initialForm);
+      setSelectedCategory("Move");
+      setPaymentStatus("idle");
+      setPaymentMessage(payment === "cancel" ? "Payment canceled. Your task was not submitted." : "");
+
+      if (payment === "cancel") {
+        window.history.replaceState(null, "", "/#task-form");
+      }
+
+      return;
+    }
+
+    if (storedForm) {
       try {
         const restored = JSON.parse(storedForm) as Partial<TaskForm> & { selectedCategory?: string };
         setForm((current) => ({
@@ -68,25 +82,10 @@ export default function Home() {
       }
     }
 
-    if (storedPaymentComplete) {
-      setPaymentStatus("success");
-      setPaymentMessage("Payment complete — you can now submit your task.");
-    }
-
-    if (payment === "success") {
-      window.localStorage.setItem(paymentStorageKey, "true");
-      setPaymentStatus("success");
-      setPaymentMessage("Payment complete — you can now submit your task.");
-      window.history.replaceState(null, "", "/#task-form");
-    }
-
-    if (payment === "cancel") {
-      if (!storedPaymentComplete) {
-        setPaymentStatus("idle");
-        setPaymentMessage("Payment canceled. Your task was not submitted.");
-      }
-      window.history.replaceState(null, "", "/#task-form");
-    }
+    window.localStorage.setItem(paymentStorageKey, "true");
+    setPaymentStatus("success");
+    setPaymentMessage("Payment complete — you can now submit your task.");
+    window.history.replaceState(null, "", "/#task-form");
   }, []);
 
   useEffect(() => {
