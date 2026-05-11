@@ -207,9 +207,17 @@ export default function Home() {
       <section className="relative px-5 py-4 sm:px-8 lg:px-10">
         <div className="mx-auto flex max-w-7xl flex-col justify-between">
           <header className="flex items-center justify-between">
-            <a className="text-sm font-black uppercase tracking-[0.28em]" href="#top">
-              TaskU
-            </a>
+            <div className="flex items-center gap-5">
+              <a className="text-sm font-black uppercase tracking-[0.28em]" href="#top">
+                TaskU
+              </a>
+              <a
+                className="text-xs font-black uppercase tracking-[0.18em] text-uconn/55 transition hover:text-husky"
+                href="/how-it-works"
+              >
+                How It Works
+              </a>
+            </div>
             <a
               href="#task-form"
               className="rounded-full border border-uconn px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition duration-200 hover:scale-[1.03] hover:bg-uconn hover:text-white"
