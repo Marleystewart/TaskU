@@ -14,8 +14,8 @@ import {
   Truck,
 } from "lucide-react";
 
-const SHEET_URL = "YOUR_GOOGLE_SCRIPT_URL";
-const STRIPE_LINK = "YOUR_TRINITY_STRIPE_PAYMENT_LINK";
+const SHEET_URL = "https://api.sheetbest.com/sheets/2322f9c9-a31f-4c3b-860b-7570ce78972d";
+const STRIPE_LINK = "https://buy.stripe.com/test_28EbJ14ZW6W81wy8cA2go00";
 
 type TaskForm = {
   name: string;
