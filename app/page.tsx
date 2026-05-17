@@ -61,27 +61,22 @@ export default function Home() {
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
+    const price = formData.get("price");
+
+    console.log("ALL FORM DATA:", Object.fromEntries(formData.entries()));
+    console.log("PRICE:", price);
 
     const data = {
-      Date: new Date().toLocaleString("en-US", {
-        month: "numeric",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      }),
+      Date: new Date().toLocaleString("en-US"),
       Name: formData.get("name"),
       Email: formData.get("email"),
       Phone: formData.get("phone"),
       Task: formData.get("task"),
       Description: formData.get("description"),
-      Price: String(formData.get("price") || ""),
+      Price: price,
       Payments: formData.get("payment"),
     };
 
-    console.log("PRICE:", formData.get("price"));
-    console.log("PRICE VALUE:", formData.get("price"));
     console.log("SENDING DATA:", data);
 
     await fetch("https://api.sheetbest.com/sheets/2322f9c9-a31f-4c3b-860b-7570ce78972d", {
