@@ -56,11 +56,11 @@ export default function Home() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
 
-    const payload = {
+    const data = {
       campus: "Trinity College Hartford",
       name: form.name,
       email: form.email,
@@ -74,13 +74,13 @@ export default function Home() {
     };
 
     try {
-      const response = await fetch(SHEET_URL, {
+      console.log("Before Sheet.best fetch:", data);
+      const response = await fetch("https://api.sheetbest.com/sheets/2322f9c9-a31f-4c3b-860b-7570ce78972d", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
+      console.log("After Sheet.best fetch:", response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -88,13 +88,13 @@ export default function Home() {
           status: response.status,
           statusText: response.statusText,
           response: errorText,
-          payload,
+          data,
         });
       }
     } catch (error) {
       console.error("TaskU Trinity sheet submit failed", error);
     } finally {
-      window.location.href = STRIPE_LINK;
+      window.location.href = "https://buy.stripe.com/test_28EbJ14ZW6W81wy8cA2go00";
     }
   }
 
@@ -209,7 +209,7 @@ export default function Home() {
           </div>
 
           <form
-            onSubmit={handleSubmit}
+            onSubmit={submitForm}
             className="rounded-[2rem] border border-white/18 bg-white/10 p-4 shadow-[0_28px_90px_rgba(0,0,0,0.34)] backdrop-blur-xl sm:p-6"
           >
             <div className="grid gap-4">
