@@ -197,6 +197,7 @@ export default function Home() {
           </div>
 
           <form
+            id="task-submit-form"
             onSubmit={submitForm}
             className="rounded-[2rem] border border-white/18 bg-white/10 p-4 shadow-[0_28px_90px_rgba(0,0,0,0.34)] backdrop-blur-xl sm:p-6"
           >
@@ -244,6 +245,7 @@ export default function Home() {
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Helper pay</span>
                   <input
                     name="price"
+                    form="task-submit-form"
                     type="text"
                     inputMode="numeric"
                     placeholder="$25"
