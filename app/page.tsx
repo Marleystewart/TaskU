@@ -23,8 +23,7 @@ type TaskForm = {
   phone: string;
   taskTitle: string;
   description: string;
-  helperPay: string;
-  price?: string;
+  price: string;
   paymentMethod: "Cash App" | "Zelle" | "Venmo" | "Apple Pay";
 };
 
@@ -34,7 +33,7 @@ const initialForm: TaskForm = {
   phone: "",
   taskTitle: "",
   description: "",
-  helperPay: "",
+  price: "",
   paymentMethod: "Venmo",
 };
 
@@ -75,7 +74,7 @@ export default function Home() {
       Phone: form.phone,
       Task: form.taskTitle,
       Description: form.description,
-      Price: form.helperPay || form.price,
+      Price: form.price,
       Payments: form.paymentMethod,
     };
 
@@ -246,9 +245,10 @@ export default function Home() {
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Helper pay</span>
                   <input
                     required
+                    name="price"
                     inputMode="decimal"
-                    value={form.helperPay}
-                    onChange={(event) => updateField("helperPay", event.target.value)}
+                    value={form.price}
+                    onChange={(event) => updateField("price", event.target.value)}
                     placeholder="$25"
                     className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
                   />
