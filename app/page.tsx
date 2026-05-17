@@ -243,9 +243,10 @@ export default function Home() {
                 <label className="grid gap-2">
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Helper pay</span>
                   <input
-                    type="number"
                     name="price"
-                    placeholder="What will you pay the helper?"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="$10"
                     required
                   />
                 </label>
