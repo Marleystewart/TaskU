@@ -62,7 +62,14 @@ export default function Home() {
     setIsSubmitting(true);
 
     const data = {
-      Date: new Date().toLocaleString(),
+      Date: new Date().toLocaleString("en-US", {
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      }),
       Name: form.name,
       Email: form.email,
       Phone: form.phone,
