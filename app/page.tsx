@@ -74,13 +74,23 @@ export default function Home() {
     };
 
     try {
-      await fetch(SHEET_URL, {
+      const response = await fetch(SHEET_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("TaskU Trinity Sheet.best request failed", {
+          status: response.status,
+          statusText: response.statusText,
+          response: errorText,
+          payload,
+        });
+      }
     } catch (error) {
       console.error("TaskU Trinity sheet submit failed", error);
     } finally {
