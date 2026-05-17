@@ -61,16 +61,14 @@ export default function Home() {
     setIsSubmitting(true);
 
     const data = {
-      campus: "Trinity College Hartford",
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      taskTitle: form.taskTitle,
-      description: form.description,
-      helperPay: form.helperPay,
-      paymentMethod: form.paymentMethod,
-      postingFee: "$3",
-      submittedAt: new Date().toISOString(),
+      Date: new Date().toISOString(),
+      Name: form.name,
+      Email: form.email,
+      Phone: form.phone,
+      Task: form.taskTitle,
+      Description: form.description,
+      Price: form.helperPay,
+      Payments: form.paymentMethod,
     };
 
     await fetch("https://api.sheetbest.com/sheets/2322f9c9-a31f-4c3b-860b-7570ce78972d", {
