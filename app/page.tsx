@@ -76,10 +76,11 @@ export default function Home() {
       Phone: formData.get("phone"),
       Task: formData.get("task"),
       Description: formData.get("description"),
-      Price: formData.get("price"),
+      Price: String(formData.get("price") || ""),
       Payments: formData.get("payment"),
     };
 
+    console.log("PRICE:", formData.get("price"));
     console.log("PRICE VALUE:", formData.get("price"));
     console.log("SENDING DATA:", data);
 
@@ -254,6 +255,7 @@ export default function Home() {
                   <input
                     required
                     name="price"
+                    id="price"
                     inputMode="decimal"
                     value={form.price}
                     onChange={(event) => updateField("price", event.target.value)}
