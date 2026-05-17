@@ -61,10 +61,7 @@ export default function Home() {
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
-    const price = formData.get("price");
-
-    console.log("ALL FORM DATA:", Object.fromEntries(formData.entries()));
-    console.log("PRICE:", price);
+    console.log("FORM DATA:", Object.fromEntries(formData.entries()));
 
     const data = {
       Date: new Date().toLocaleString("en-US"),
@@ -73,11 +70,9 @@ export default function Home() {
       Phone: formData.get("phone"),
       Task: formData.get("task"),
       Description: formData.get("description"),
-      Price: price,
+      Price: formData.get("price"),
       Payments: formData.get("payment"),
     };
-
-    console.log("SENDING DATA:", data);
 
     await fetch("https://api.sheetbest.com/sheets/2322f9c9-a31f-4c3b-860b-7570ce78972d", {
       method: "POST",
@@ -248,14 +243,10 @@ export default function Home() {
                 <label className="grid gap-2">
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Helper pay</span>
                   <input
-                    required
+                    type="number"
                     name="price"
-                    id="price"
-                    inputMode="decimal"
-                    value={form.price}
-                    onChange={(event) => updateField("price", event.target.value)}
-                    placeholder="$25"
-                    className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
+                    placeholder="What will you pay the helper?"
+                    required
                   />
                 </label>
               </div>
