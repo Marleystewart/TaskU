@@ -1,538 +1,326 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { ArrowDown, Bolt, Check, CircleDollarSign, MapPin, Users } from "lucide-react";
+import { FormEvent, useState } from "react";
+import {
+  ArrowRight,
+  AtSign,
+  BadgeDollarSign,
+  BookOpen,
+  CheckCircle2,
+  Coffee,
+  Handshake,
+  Package,
+  Sparkles,
+  Truck,
+} from "lucide-react";
+
+const SHEET_URL = "YOUR_GOOGLE_SCRIPT_URL";
+const STRIPE_LINK = "YOUR_TRINITY_STRIPE_PAYMENT_LINK";
 
 type TaskForm = {
   name: string;
-  budget: string;
-  location: string;
-  time: "ASAP" | "Today" | "This Week";
-  contact: string;
-  paymentMethod: "Venmo" | "Cash" | "CashApp" | "Other";
+  email: string;
+  phone: string;
+  taskTitle: string;
+  description: string;
+  helperPay: string;
+  paymentMethod: "Cash App" | "Zelle" | "Venmo" | "Apple Pay";
 };
 
-const trustItems = [
-  { label: "Student-powered", icon: Users },
-  { label: "Fast responses", icon: Bolt },
-  { label: "Affordable help", icon: CircleDollarSign },
-];
-
-const workerPaymentMethods = ["Venmo", "Cash", "CashApp", "Other"] as const;
-const taskCategories = ["Move", "Tutor", "Pickup", "Clean", "Errand", "Fix", "Other"];
-const taskPlaceholders = ["Move a mini fridge", "Take trash out", "Help move boxes", "Pick up groceries"];
-const paymentStorageKey = "tasku-posting-fee-paid";
-const formStorageKey = "tasku-task-form-draft";
 const initialForm: TaskForm = {
   name: "",
-  budget: "",
-  location: "",
-  time: "ASAP",
-  contact: "",
+  email: "",
+  phone: "",
+  taskTitle: "",
+  description: "",
+  helperPay: "",
   paymentMethod: "Venmo",
 };
 
+const taskTypes = [
+  { label: "Moving", icon: Package },
+  { label: "Errands", icon: Truck },
+  { label: "Food pickup", icon: Coffee },
+  { label: "Cleaning", icon: Sparkles },
+  { label: "Tutoring", icon: BookOpen },
+  { label: "Deliveries", icon: Handshake },
+];
+
+const paymentMethods = ["Cash App", "Zelle", "Venmo", "Apple Pay"] as const;
+
 export default function Home() {
   const [form, setForm] = useState<TaskForm>(initialForm);
-  const [taskDescription, setTaskDescription] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Move");
-  const [posted, setPosted] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [paymentMessage, setPaymentMessage] = useState("");
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [placeholderFading, setPlaceholderFading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const paymentComplete = paymentStatus === "success";
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const payment = params.get("payment");
-    const storedForm = window.localStorage.getItem(formStorageKey);
-
-    if (payment !== "success") {
-      window.localStorage.removeItem(formStorageKey);
-      window.localStorage.removeItem(paymentStorageKey);
-      setForm(initialForm);
-      setTaskDescription("");
-      setSelectedCategory("Move");
-      setPaymentStatus("idle");
-      setPaymentMessage(payment === "cancel" ? "Payment canceled. Your task was not submitted." : "");
-
-      if (payment === "cancel") {
-        window.history.replaceState(null, "", "/#task-form");
-      }
-
-      return;
-    }
-
-    if (storedForm) {
-      try {
-        const restored = JSON.parse(storedForm) as Partial<TaskForm> & {
-          selectedCategory?: string;
-          taskDescription?: string;
-        };
-        setForm((current) => ({
-          name: restored.name ?? current.name,
-          budget: restored.budget ?? current.budget,
-          location: restored.location ?? current.location,
-          time: restored.time === "ASAP" || restored.time === "Today" || restored.time === "This Week"
-            ? restored.time
-            : current.time,
-          contact: restored.contact ?? current.contact,
-          paymentMethod: workerPaymentMethods.includes(restored.paymentMethod as TaskForm["paymentMethod"])
-            ? (restored.paymentMethod as TaskForm["paymentMethod"])
-            : current.paymentMethod,
-        }));
-        setTaskDescription(restored.taskDescription ?? "");
-
-        if (restored.selectedCategory) {
-          setSelectedCategory(restored.selectedCategory);
-        }
-      } catch (error) {
-        console.error("Could not restore TaskU form draft", error);
-      }
-    }
-
-    window.localStorage.setItem(paymentStorageKey, "true");
-    setPaymentStatus("success");
-    setPaymentMessage("Payment complete — you can now submit your task.");
-    window.history.replaceState(null, "", "/#task-form");
-  }, []);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setPlaceholderFading(true);
-      window.setTimeout(() => {
-        setPlaceholderIndex((current) => (current + 1) % taskPlaceholders.length);
-        setPlaceholderFading(false);
-      }, 250);
-    }, 3200);
-
-    return () => window.clearInterval(interval);
-  }, []);
-
   function updateField(field: keyof TaskForm, value: string) {
-    setPosted(false);
     setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function resetTaskFlow() {
-    window.localStorage.removeItem(formStorageKey);
-    window.localStorage.removeItem(paymentStorageKey);
-    setForm(initialForm);
-    setTaskDescription("");
-    setSelectedCategory("Move");
-    setPaymentStatus("idle");
-    setPaymentMessage("");
-    setIsSubmitting(false);
-  }
-
-  async function handlePayment() {
-    setPaymentStatus("loading");
-    setPaymentMessage("");
-    window.localStorage.setItem(
-      formStorageKey,
-      JSON.stringify({
-        ...form,
-        taskDescription,
-        selectedCategory,
-      }),
-    );
-
-    try {
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.url) {
-        throw new Error(data.error ?? "Payment setup is not complete yet.");
-      }
-
-      window.location.href = data.url;
-    } catch (error) {
-      setPaymentStatus("error");
-      setPaymentMessage(error instanceof Error ? error.message : "Payment setup is not complete yet.");
-    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!paymentComplete) {
-      setPaymentStatus("error");
-      setPaymentMessage("Please pay the $3 posting fee before submitting.");
-      return;
-    }
-
     setIsSubmitting(true);
-    setPaymentMessage("");
-    console.log("Task Description:", taskDescription);
-    const name = form.name;
-    const location = form.location;
-    const timeNeeded = form.time;
-    const contact = form.contact;
-    const price = form.budget;
-    const paymentMethod = form.paymentMethod;
-    const submitBody = {
-      name,
-      taskDescription,
-      location,
-      timeNeeded,
-      contact,
-      price,
-      paymentMethod,
+
+    const payload = {
+      campus: "Trinity College Hartford",
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      taskTitle: form.taskTitle,
+      description: form.description,
+      helperPay: form.helperPay,
+      paymentMethod: form.paymentMethod,
+      postingFee: "$3",
+      submittedAt: new Date().toISOString(),
     };
-    console.log("SUBMIT BODY:", submitBody);
 
     try {
-      const response = await fetch("/api/submit-task", {
+      await fetch(SHEET_URL, {
         method: "POST",
+        mode: "no-cors",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(submitBody),
+        body: JSON.stringify(payload),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Could not submit task. Please try again.");
-      }
-
-      console.log("TaskU post", { ...form, taskDescription, category: selectedCategory, paid: "Yes" });
-      resetTaskFlow();
-      setPosted(true);
     } catch (error) {
-      setPaymentMessage(error instanceof Error ? error.message : "Could not submit task. Please try again.");
+      console.error("TaskU Trinity sheet submit failed", error);
     } finally {
-      setIsSubmitting(false);
+      window.location.href = STRIPE_LINK;
     }
   }
 
   return (
-    <main className="overflow-hidden bg-white text-uconn">
-      <section className="relative px-5 py-4 sm:px-8 lg:px-10">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between">
-          <header className="flex items-center justify-between">
-            <div className="flex items-center gap-5">
-              <a className="text-sm font-black uppercase tracking-[0.28em]" href="#top">
-                TaskU
-              </a>
-              <a
-                className="text-xs font-black uppercase tracking-[0.18em] text-uconn/55 transition hover:text-husky"
-                href="/how-it-works"
-              >
-                How It Works
-              </a>
-            </div>
-            <a
-              href="#task-form"
-              className="rounded-full border border-uconn px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition duration-200 hover:scale-[1.03] hover:bg-uconn hover:text-white"
-            >
-              Post
-            </a>
-          </header>
+    <main className="min-h-screen overflow-hidden bg-[#061A40] text-white">
+      <section className="relative isolate px-5 py-5 sm:px-8 lg:px-10">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(201,164,74,0.28),transparent_34%),linear-gradient(135deg,#061A40_0%,#08265E_48%,#030B1C_100%)]" />
+        <div className="absolute left-1/2 top-0 -z-10 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[#C9A44A]/12 blur-3xl" />
 
-          <div id="top" className="grid items-end gap-5 py-5 sm:py-6">
-            <div>
-              <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-ice px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-husky">
-                <Bolt size={15} fill="currentColor" />
-                UConn help in minutes
-              </p>
-              <h1 className="max-w-4xl text-[clamp(2.75rem,10vw,9rem)] font-black uppercase leading-[0.78] tracking-normal">
-                Need help at UConn?
-              </h1>
-              <p className="mt-4 max-w-xl text-xl font-extrabold leading-tight text-uconn/78 sm:text-3xl">
-                Post a task. Get it done fast.
-              </p>
+        <div className="mx-auto max-w-7xl">
+          <header className="flex items-center justify-between border-b border-white/15 pb-5">
+            <a href="#top" className="text-sm font-black uppercase tracking-[0.28em] text-[#F4D77F]">
+              TaskU Trinity
+            </a>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://instagram.com/thetasku"
+                target="_blank"
+                rel="noreferrer"
+                className="hidden items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-white/68 transition hover:text-[#F4D77F] sm:flex"
+              >
+                <AtSign size={16} />
+                @thetasku
+              </a>
               <a
                 href="#task-form"
-                className="mt-6 inline-flex items-center gap-3 rounded-full bg-uconn px-7 py-3.5 text-base font-black uppercase tracking-[0.12em] text-white shadow-speed transition duration-200 hover:-translate-y-0.5 hover:scale-[1.02] hover:bg-husky focus:outline-none focus:ring-4 focus:ring-husky/25"
+                className="rounded-full border border-[#F4D77F]/70 bg-[#F4D77F] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#061A40] shadow-[0_18px_45px_rgba(201,164,74,0.25)] transition hover:-translate-y-0.5 hover:brightness-110"
               >
-                Post a Task
-                <ArrowDown size={20} strokeWidth={3} />
+                Post
               </a>
             </div>
+          </header>
 
-            <div className="border-y-2 border-uconn py-3">
-              <div className="flex items-center justify-between text-sm font-black uppercase tracking-[0.18em]">
-                <span>30 sec</span>
-                <span className="text-husky">No feed. No clutter.</span>
+          <div id="top" className="grid gap-10 py-12 lg:grid-cols-[1fr_0.82fr] lg:items-center lg:py-20">
+            <div>
+              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#F4D77F] shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur">
+                <Sparkles size={15} fill="currentColor" />
+                Campus help for Trinity students
+              </p>
+              <h1 className="max-w-5xl text-[clamp(3.25rem,10vw,8.75rem)] font-black uppercase leading-[0.82] tracking-normal">
+                Get campus help fast.
+              </h1>
+              <p className="mt-6 max-w-2xl text-xl font-bold leading-tight text-white/74 sm:text-3xl">
+                Moving, errands, food pickup, cleaning, tutoring, and deliveries around Trinity College.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <a
+                  href="#task-form"
+                  className="inline-flex items-center justify-center gap-3 rounded-full bg-[#F4D77F] px-7 py-4 text-sm font-black uppercase tracking-[0.14em] text-[#061A40] shadow-[0_22px_70px_rgba(201,164,74,0.32)] transition hover:-translate-y-0.5 hover:brightness-110"
+                >
+                  Start a task
+                  <ArrowRight size={19} strokeWidth={3} />
+                </a>
+                <a
+                  href="https://instagram.com/thetasku"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/18 bg-white/8 px-7 py-4 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:-translate-y-0.5 hover:border-[#F4D77F] hover:text-[#F4D77F]"
+                >
+                  <AtSign size={18} />
+                  Instagram
+                </a>
               </div>
-              <div className="mt-4 grid grid-cols-4 gap-2">
-                {taskCategories.map((task) => (
-                  <button
-                    type="button"
-                    key={task}
-                    onClick={() => setSelectedCategory(task)}
-                    className={`flex h-10 items-center justify-center gap-1.5 rounded-md border-2 text-xs font-black uppercase transition duration-200 hover:scale-[1.02] sm:text-base ${
-                      selectedCategory === task
-                        ? "border-husky bg-white text-uconn"
-                        : "border-uconn bg-uconn text-white hover:bg-husky"
-                    }`}
+            </div>
+
+            <div className="rounded-[2rem] border border-white/18 bg-white/10 p-5 shadow-[0_28px_90px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+              <div className="grid grid-cols-2 gap-3">
+                {taskTypes.map(({ label, icon: Icon }) => (
+                  <div
+                    key={label}
+                    className="rounded-2xl border border-white/12 bg-[#061A40]/42 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition hover:-translate-y-1 hover:border-[#F4D77F]/70 hover:bg-white/12"
                   >
-                    {selectedCategory === task ? <Check size={14} strokeWidth={4} /> : null}
-                    {task}
-                  </button>
+                    <Icon className="text-[#F4D77F]" size={24} strokeWidth={2.7} />
+                    <p className="mt-5 text-sm font-black uppercase tracking-[0.12em] text-white">
+                      {label}
+                    </p>
+                  </div>
                 ))}
+              </div>
+              <div className="mt-4 rounded-2xl border border-[#F4D77F]/35 bg-[#F4D77F]/12 p-5">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#F4D77F]">
+                  Premium campus network
+                </p>
+                <p className="mt-2 text-base font-bold leading-snug text-white/76">
+                  Post the task, pay the $3 listing fee, and get connected with students who can help.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="task-form" className="border-y-2 border-uconn bg-uconn px-5 py-6 text-white sm:px-8 lg:px-10">
-        <div className="mx-auto grid max-w-7xl gap-8 xl:grid-cols-[0.7fr_1fr] xl:items-start">
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-husky">Quick task form</p>
-            <h2 className="mt-3 text-3xl font-black uppercase leading-[0.88]">
-              Post in 30 seconds
+      <section id="task-form" className="px-5 pb-16 sm:px-8 lg:px-10">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.62fr_1fr] lg:items-start">
+          <div className="lg:sticky lg:top-8">
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-[#F4D77F]">
+              Post in under a minute
+            </p>
+            <h2 className="mt-4 text-4xl font-black uppercase leading-[0.88] sm:text-6xl">
+              Tell us what you need.
             </h2>
-            <div className="mt-3 grid gap-1 text-sm font-bold text-white/52">
-              <span>Helping students across campus</span>
-              <span>Students available today</span>
+            <div className="mt-6 grid gap-3 text-sm font-bold uppercase tracking-[0.14em] text-white/58">
+              <p className="flex items-center gap-2">
+                <CheckCircle2 size={17} className="text-[#F4D77F]" />
+                Trinity-focused campus help
+              </p>
+              <p className="flex items-center gap-2">
+                <BadgeDollarSign size={17} className="text-[#F4D77F]" />
+                Helpers keep their task pay
+              </p>
             </div>
           </div>
 
-          {posted ? (
-            <div className="flex min-h-[420px] flex-col items-center justify-center rounded-md border-2 border-white/25 bg-white/8 p-8 text-center">
-              <h3 className="text-4xl font-black uppercase leading-[0.9] text-white">
-                Task Submitted ✅
-              </h3>
-              <p className="mt-4 text-xl font-black text-white">
-                Your task has been sent to TaskU.
-              </p>
-              <p className="mt-3 text-sm font-bold uppercase tracking-[0.16em] text-white/55">
-                Check your phone or email soon
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  resetTaskFlow();
-                  setPosted(false);
-                }}
-                className="mt-8 h-14 rounded-md bg-white px-6 text-sm font-black uppercase tracking-[0.14em] text-uconn transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-husky hover:text-white"
-              >
-                Post another task
-              </button>
-            </div>
-          ) : (
-          <form onSubmit={handleSubmit} className="grid gap-3">
-            <label className="grid gap-2">
-              <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">
-                Your Name
-              </span>
-              <input
-                required
-                value={form.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder="Your name"
-                className="h-16 rounded-md border-2 border-white bg-white px-5 text-lg font-extrabold text-uconn outline-none transition placeholder:text-uconn/35 focus:border-husky"
-              />
-            </label>
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-[2rem] border border-white/18 bg-white/10 p-4 shadow-[0_28px_90px_rgba(0,0,0,0.34)] backdrop-blur-xl sm:p-6"
+          >
+            <div className="grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-2">
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Name</span>
+                  <input
+                    required
+                    value={form.name}
+                    onChange={(event) => updateField("name", event.target.value)}
+                    placeholder="Your name"
+                    className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Email</span>
+                  <input
+                    required
+                    type="email"
+                    value={form.email}
+                    onChange={(event) => updateField("email", event.target.value)}
+                    placeholder="name@trincoll.edu"
+                    className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
+                  />
+                </label>
+              </div>
 
-            <label className="grid gap-2">
-              <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">
-                What do you need help with?
-              </span>
-              <input
-                required
-                value={taskDescription}
-                onChange={(e) => setTaskDescription(e.target.value)}
-                placeholder={taskPlaceholders[placeholderIndex]}
-                className={`h-16 rounded-md border-2 border-white bg-white px-5 text-lg font-extrabold text-uconn outline-none transition placeholder:transition-colors placeholder:duration-300 focus:border-husky ${
-                  placeholderFading ? "placeholder:text-uconn/10" : "placeholder:text-uconn/35"
-                }`}
-              />
-            </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-2">
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Phone</span>
+                  <input
+                    required
+                    type="tel"
+                    value={form.phone}
+                    onChange={(event) => updateField("phone", event.target.value)}
+                    placeholder="Phone number"
+                    className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Helper pay</span>
+                  <input
+                    required
+                    inputMode="decimal"
+                    value={form.helperPay}
+                    onChange={(event) => updateField("helperPay", event.target.value)}
+                    placeholder="$25"
+                    className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
+                  />
+                </label>
+              </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">Budget</span>
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Task title</span>
                 <input
                   required
-                  inputMode="decimal"
-                  value={form.budget}
-                  onChange={(event) => updateField("budget", event.target.value)}
-                  placeholder="$25"
-                  className="h-16 rounded-md border-2 border-white bg-white px-5 text-lg font-extrabold text-uconn outline-none transition placeholder:text-uconn/35 focus:border-husky"
+                  value={form.taskTitle}
+                  onChange={(event) => updateField("taskTitle", event.target.value)}
+                  placeholder="Move boxes from Vernon to Summit"
+                  className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
                 />
               </label>
-              <label className="grid gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">Where on campus?</span>
-                <input
-                  required
-                  value={form.location}
-                  onChange={(event) => updateField("location", event.target.value)}
-                  placeholder="Dorm, building, or area (ex: Busby, North, Storrs Center)"
-                  className="h-16 rounded-md border-2 border-white bg-white px-5 text-lg font-extrabold text-uconn outline-none transition placeholder:text-uconn/35 focus:border-husky"
-                />
-              </label>
-            </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">Time needed</span>
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Description</span>
+                <textarea
+                  required
+                  value={form.description}
+                  onChange={(event) => updateField("description", event.target.value)}
+                  placeholder="Add the details, timing, pickup spot, or anything the helper should know."
+                  className="min-h-32 resize-none rounded-2xl border border-white/14 bg-white px-4 py-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">
+                  Preferred payment method
+                </span>
                 <select
-                  value={form.time}
-                  onChange={(event) => updateField("time", event.target.value)}
-                  className="h-16 rounded-md border-2 border-white bg-white px-5 text-lg font-extrabold text-uconn outline-none transition focus:border-husky"
+                  value={form.paymentMethod}
+                  onChange={(event) => updateField("paymentMethod", event.target.value)}
+                  className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
                 >
-                  <option>ASAP</option>
-                  <option>Today</option>
-                  <option>This Week</option>
+                  {paymentMethods.map((method) => (
+                    <option key={method}>{method}</option>
+                  ))}
                 </select>
               </label>
-              <label className="grid gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">Contact</span>
-                <input
-                  required
-                  value={form.contact}
-                  onChange={(event) => updateField("contact", event.target.value)}
-                  placeholder="phone or email"
-                  className="h-16 rounded-md border-2 border-white bg-white px-5 text-lg font-extrabold text-uconn outline-none transition placeholder:text-uconn/35 focus:border-husky"
-                />
-              </label>
-            </div>
 
-            <div className="grid gap-2">
-              <span className="text-xs font-black uppercase tracking-[0.18em] text-white/70">
-                How will you pay the worker?
-              </span>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {workerPaymentMethods.map((method) => (
-                  <button
-                    type="button"
-                    key={method}
-                    onClick={() => updateField("paymentMethod", method)}
-                    className={`flex h-12 items-center justify-center gap-1.5 rounded-md border-2 text-xs font-black uppercase transition duration-200 hover:scale-[1.02] sm:text-sm ${
-                      form.paymentMethod === method
-                        ? "border-husky bg-white text-uconn"
-                        : "border-white/35 bg-white/8 text-white hover:border-white hover:bg-white/15"
-                    }`}
-                  >
-                    {form.paymentMethod === method ? <Check size={14} strokeWidth={4} /> : null}
-                    {method}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-2 rounded-md border-2 border-white/25 bg-white/8 p-5">
-              <h3 className="text-sm font-black uppercase tracking-[0.18em] text-white">
-                Posting Fee
-              </h3>
-              <p className="mt-2 text-sm font-bold leading-snug text-white/72">
-                Quick $3 fee to post your task
-              </p>
-              <button
-                type="button"
-                onClick={handlePayment}
-                disabled={paymentStatus === "loading" || paymentComplete}
-                className="mt-4 h-14 w-full rounded-md bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-uconn transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-husky hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:scale-100 disabled:hover:bg-white disabled:hover:text-uconn"
-              >
-                {paymentComplete ? "Fee Paid" : paymentStatus === "loading" ? "Opening Checkout" : "Pay $3 Posting Fee"}
-              </button>
-              <p className="mt-3 text-xs font-bold uppercase tracking-[0.12em] text-white/45">
-                Secure payment • takes 10 seconds
-              </p>
-              {paymentMessage ? (
-                <p
-                  className={`mt-3 text-sm font-black ${
-                    paymentComplete ? "text-white" : "text-white/72"
-                  }`}
-                >
-                  {paymentMessage}
+              <div className="rounded-2xl border border-[#F4D77F]/35 bg-[#F4D77F]/12 p-5">
+                <p className="text-sm font-black uppercase tracking-[0.18em] text-[#F4D77F]">
+                  $3 posting fee
                 </p>
-              ) : null}
-            </div>
+                <p className="mt-2 text-sm font-bold leading-snug text-white/70">
+                  Submit your task details, then pay the $3 TaskU Trinity posting fee through Stripe.
+                </p>
+              </div>
 
-            <button
-              disabled={!paymentComplete || isSubmitting}
-              className={`mt-2 h-16 rounded-md text-lg font-black uppercase tracking-[0.16em] text-white transition duration-200 focus:outline-none focus:ring-4 focus:ring-white/25 ${
-                paymentComplete
-                  ? "bg-uconn shadow-speed hover:-translate-y-0.5 hover:scale-[1.01] hover:brightness-110"
-                  : "cursor-not-allowed bg-husky opacity-50"
-              }`}
-            >
-              {isSubmitting ? "Submitting Task" : "Submit Task"}
-            </button>
-            {!paymentComplete ? (
-              <p className="-mt-1 text-center text-xs font-black uppercase tracking-[0.16em] text-white/62">
-                Complete payment to unlock submission
-              </p>
-            ) : null}
+              <button
+                disabled={isSubmitting}
+                className="h-16 rounded-2xl bg-[#F4D77F] px-6 text-base font-black uppercase tracking-[0.16em] text-[#061A40] shadow-[0_22px_70px_rgba(201,164,74,0.28)] transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:brightness-100"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Task + Pay"}
+              </button>
+            </div>
           </form>
-          )}
         </div>
       </section>
 
-      <section className="px-5 py-16 sm:px-8 lg:px-10">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div>
-            <p className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.22em] text-husky">
-              <MapPin size={18} fill="currentColor" />
-              UConn coverage
-            </p>
-            <h2 className="mt-4 text-5xl font-black uppercase leading-[0.9] sm:text-7xl">
-              We cover all of UConn
-            </h2>
-            <p className="mt-5 text-xl font-extrabold text-uconn/70">
-              Including dorms + nearby areas
-            </p>
-            <p className="mt-3 text-sm font-black uppercase tracking-[0.14em] text-uconn/45">
-              Example areas we serve — you can enter your exact location above
-            </p>
-          </div>
-
-          <div className="relative min-h-[360px] overflow-hidden rounded-md border-2 border-uconn bg-ice p-5 shadow-speed">
-            <div className="absolute left-8 top-10 h-24 w-44 rotate-[-8deg] rounded-full border-2 border-husky/35" />
-            <div className="absolute bottom-8 right-8 h-32 w-56 rotate-[-10deg] rounded-full border-2 border-uconn/25" />
-            <div className="absolute left-1/2 top-1/2 h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
-            <div className="relative grid h-full min-h-[320px] grid-cols-2 gap-3 sm:grid-cols-3">
-              {[
-                "North Campus",
-                "South Campus",
-                "Hilltop Apartments",
-                "Busby Suites",
-                "Storrs Center",
-              ].map((zone, index) => (
-                <div
-                  key={zone}
-                  className={`flex items-center justify-center rounded-md border-2 border-uconn bg-white p-4 text-center text-sm font-black uppercase tracking-[0.12em] transition duration-200 hover:scale-[1.02] hover:border-husky hover:text-husky ${
-                    index === 4 ? "sm:col-span-2" : ""
-                  }`}
-                >
-                  {zone}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y-2 border-uconn px-5 py-8 sm:px-8 lg:px-10">
-        <div className="mx-auto grid max-w-7xl gap-3 sm:grid-cols-3">
-          {trustItems.map(({ label, icon: Icon }) => (
-            <div key={label} className="flex items-center gap-3 rounded-md bg-uconn px-5 py-5 text-white">
-              <Icon className="text-husky" size={25} strokeWidth={3} />
-              <span className="text-lg font-black uppercase tracking-[0.08em]">{label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <footer className="px-5 py-8 sm:px-8 lg:px-10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 text-sm font-black uppercase tracking-[0.18em] sm:flex-row sm:items-center sm:justify-between">
-          <p>TaskU @ UConn</p>
+      <footer className="border-t border-white/12 px-5 py-8 sm:px-8 lg:px-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 text-sm font-black uppercase tracking-[0.18em] text-white/58 sm:flex-row sm:items-center sm:justify-between">
+          <p>TaskU Trinity</p>
           <a
             href="https://instagram.com/thetasku"
             target="_blank"
             rel="noreferrer"
-            className="text-husky no-underline hover:underline"
+            className="inline-flex items-center gap-2 text-[#F4D77F] no-underline hover:underline"
           >
-            Instagram: @theTaskU
+            <AtSign size={16} />
+            @thetasku
           </a>
         </div>
       </footer>
