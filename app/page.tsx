@@ -73,29 +73,16 @@ export default function Home() {
       submittedAt: new Date().toISOString(),
     };
 
-    try {
-      console.log("Before Sheet.best fetch:", data);
-      const response = await fetch("https://api.sheetbest.com/sheets/2322f9c9-a31f-4c3b-860b-7570ce78972d", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      console.log("After Sheet.best fetch:", response.status, response.statusText);
+    await fetch("https://api.sheetbest.com/sheets/2322f9c9-a31f-4c3b-860b-7570ce78972d", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("TaskU Trinity Sheet.best request failed", {
-          status: response.status,
-          statusText: response.statusText,
-          response: errorText,
-          data,
-        });
-      }
-    } catch (error) {
-      console.error("TaskU Trinity sheet submit failed", error);
-    } finally {
-      window.location.href = "https://buy.stripe.com/test_28EbJ14ZW6W81wy8cA2go00";
-    }
+    console.log("sent to sheet", data);
+    window.location.href = "https://buy.stripe.com/test_28EbJ14ZW6W81wy8cA2go00";
   }
 
   return (
