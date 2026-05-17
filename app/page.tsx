@@ -60,6 +60,8 @@ export default function Home() {
     event.preventDefault();
     setIsSubmitting(true);
 
+    const formData = new FormData(event.currentTarget);
+
     const data = {
       Date: new Date().toLocaleString("en-US", {
         month: "numeric",
@@ -69,13 +71,13 @@ export default function Home() {
         minute: "2-digit",
         hour12: true,
       }),
-      Name: form.name,
-      Email: form.email,
-      Phone: form.phone,
-      Task: form.taskTitle,
-      Description: form.description,
-      Price: form.price,
-      Payments: form.paymentMethod,
+      Name: formData.get("name"),
+      Email: formData.get("email"),
+      Phone: formData.get("phone"),
+      Task: formData.get("task"),
+      Description: formData.get("description"),
+      Price: formData.get("price"),
+      Payments: formData.get("payment"),
     };
 
     await fetch("https://api.sheetbest.com/sheets/2322f9c9-a31f-4c3b-860b-7570ce78972d", {
@@ -210,6 +212,7 @@ export default function Home() {
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Name</span>
                   <input
                     required
+                    name="name"
                     value={form.name}
                     onChange={(event) => updateField("name", event.target.value)}
                     placeholder="Your name"
@@ -220,6 +223,7 @@ export default function Home() {
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Email</span>
                   <input
                     required
+                    name="email"
                     type="email"
                     value={form.email}
                     onChange={(event) => updateField("email", event.target.value)}
@@ -234,6 +238,7 @@ export default function Home() {
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Phone</span>
                   <input
                     required
+                    name="phone"
                     type="tel"
                     value={form.phone}
                     onChange={(event) => updateField("phone", event.target.value)}
@@ -259,6 +264,7 @@ export default function Home() {
                 <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Task title</span>
                 <input
                   required
+                  name="task"
                   value={form.taskTitle}
                   onChange={(event) => updateField("taskTitle", event.target.value)}
                   placeholder="Move boxes from Vernon to Summit"
@@ -270,6 +276,7 @@ export default function Home() {
                 <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Description</span>
                 <textarea
                   required
+                  name="description"
                   value={form.description}
                   onChange={(event) => updateField("description", event.target.value)}
                   placeholder="Add the details, timing, pickup spot, or anything the helper should know."
@@ -282,6 +289,7 @@ export default function Home() {
                   Preferred payment method
                 </span>
                 <select
+                  name="payment"
                   value={form.paymentMethod}
                   onChange={(event) => updateField("paymentMethod", event.target.value)}
                   className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
