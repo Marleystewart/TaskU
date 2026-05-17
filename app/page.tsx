@@ -245,7 +245,8 @@ export default function Home() {
                   <input
                     name="price"
                     type="text"
-                    placeholder="Optional"
+                    inputMode="numeric"
+                    placeholder="$25"
                     className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
                   />
                 </label>
