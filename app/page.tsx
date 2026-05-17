@@ -50,6 +50,7 @@ const paymentMethods = ["Cash App", "Zelle", "Venmo", "Apple Pay"] as const;
 
 export default function Home() {
   const [form, setForm] = useState<TaskForm>(initialForm);
+  const [price, setPrice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function updateField(field: keyof TaskForm, value: string) {
@@ -70,7 +71,7 @@ export default function Home() {
       Phone: formData.get("phone"),
       Task: formData.get("task"),
       Description: formData.get("description"),
-      Price: formData.get("price") || "",
+      Price: price,
       Payments: formData.get("payment"),
     };
 
@@ -245,10 +246,11 @@ export default function Home() {
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-white/62">Helper pay</span>
                   <input
                     name="price"
-                    form="task-submit-form"
                     type="text"
                     inputMode="numeric"
                     placeholder="$25"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
                     className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
                   />
                 </label>
