@@ -80,6 +80,9 @@ export default function Home() {
       Payments: formData.get("payment"),
     };
 
+    console.log("PRICE VALUE:", formData.get("price"));
+    console.log("SENDING DATA:", data);
+
     await fetch("https://api.sheetbest.com/sheets/2322f9c9-a31f-4c3b-860b-7570ce78972d", {
       method: "POST",
       headers: {
