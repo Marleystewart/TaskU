@@ -70,7 +70,7 @@ export default function Home() {
       Phone: formData.get("phone"),
       Task: formData.get("task"),
       Description: formData.get("description"),
-      Price: formData.get("price"),
+      Price: formData.get("price") || "",
       Payments: formData.get("payment"),
     };
 
@@ -245,9 +245,8 @@ export default function Home() {
                   <input
                     name="price"
                     type="text"
-                    inputMode="numeric"
-                    placeholder="$10"
-                    required
+                    placeholder="Optional"
+                    className="h-14 rounded-2xl border border-white/14 bg-white px-4 text-base font-bold text-[#061A40] outline-none transition placeholder:text-[#061A40]/35 focus:border-[#F4D77F] focus:ring-4 focus:ring-[#F4D77F]/20"
                   />
                 </label>
               </div>
