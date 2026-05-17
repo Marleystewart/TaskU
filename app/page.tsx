@@ -24,6 +24,7 @@ type TaskForm = {
   taskTitle: string;
   description: string;
   helperPay: string;
+  price?: string;
   paymentMethod: "Cash App" | "Zelle" | "Venmo" | "Apple Pay";
 };
 
@@ -61,13 +62,13 @@ export default function Home() {
     setIsSubmitting(true);
 
     const data = {
-      Date: new Date().toISOString(),
+      Date: new Date().toLocaleString(),
       Name: form.name,
       Email: form.email,
       Phone: form.phone,
       Task: form.taskTitle,
       Description: form.description,
-      Price: form.helperPay,
+      Price: form.helperPay || form.price,
       Payments: form.paymentMethod,
     };
 
