@@ -63,6 +63,7 @@ export default function Home() {
 
     const formData = new FormData(event.currentTarget);
     console.log("FORM DATA:", Object.fromEntries(formData.entries()));
+    console.log("PRICE STATE:", price);
 
     const data = {
       Date: new Date().toLocaleString("en-US"),
