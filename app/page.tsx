@@ -66,10 +66,9 @@ export default function Home() {
     console.log("PRICE STATE:", price);
     const priceValue =
       price ||
-      String(formData.get("price") || "") ||
-      (document.querySelector('input[name="price"]') as HTMLInputElement)?.value ||
+      (event.currentTarget.querySelector('input[name="price"]') as HTMLInputElement)?.value ||
       "";
-    console.log("FINAL PRICE:", priceValue);
+    console.log("FINAL PRICE BEING SENT:", priceValue);
 
     const data = {
       Date: new Date().toLocaleString("en-US"),
