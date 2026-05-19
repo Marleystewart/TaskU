@@ -64,6 +64,12 @@ export default function Home() {
     const formData = new FormData(event.currentTarget);
     console.log("FORM DATA:", Object.fromEntries(formData.entries()));
     console.log("PRICE STATE:", price);
+    const priceValue =
+      price ||
+      String(formData.get("price") || "") ||
+      (document.querySelector('input[name="price"]') as HTMLInputElement)?.value ||
+      "";
+    console.log("FINAL PRICE:", priceValue);
 
     const data = {
       Date: new Date().toLocaleString("en-US"),
@@ -72,7 +78,7 @@ export default function Home() {
       Phone: formData.get("phone"),
       Task: formData.get("task"),
       Description: formData.get("description"),
-      Price: price,
+      Price: priceValue,
       Payments: formData.get("payment"),
     };
 
